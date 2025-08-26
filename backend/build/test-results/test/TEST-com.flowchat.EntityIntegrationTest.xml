@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.flowchat.EntityIntegrationTest" tests="5" skipped="5" failures="0" errors="0" timestamp="2025-08-26T01:50:20" hostname="heemangui-MacBookPro.local" time="0.0">
+  <properties/>
+  <testcase name="testAnalysisResultEntityAndRepository()" classname="com.flowchat.EntityIntegrationTest" time="0.0">
+    <skipped/>
+  </testcase>
+  <testcase name="testUserEntityAndRepository()" classname="com.flowchat.EntityIntegrationTest" time="0.0">
+    <skipped/>
+  </testcase>
+  <testcase name="testRepositoryQueries()" classname="com.flowchat.EntityIntegrationTest" time="0.0">
+    <skipped/>
+  </testcase>
+  <testcase name="testChatRoomEntityAndRepository()" classname="com.flowchat.EntityIntegrationTest" time="0.0">
+    <skipped/>
+  </testcase>
+  <testcase name="testChatMessageEntityAndRepository()" classname="com.flowchat.EntityIntegrationTest" time="0.0">
+    <skipped/>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

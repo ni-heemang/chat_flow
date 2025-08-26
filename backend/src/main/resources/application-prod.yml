@@ -1,0 +1,19 @@
+# 운영 환경 설정
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/flowchat}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:password}
+    
+  jpa:
+    hibernate:
+      ddl-auto: validate # 운영 환경에서는 스키마 변경 금지
+    show-sql: false
+    
+jwt:
+  secret: ${JWT_SECRET:flowchatProductionSecretKeyForJwtTokenGenerationAndValidation2024}
+  
+logging:
+  level:
+    com.flowchat: INFO
+    root: WARN

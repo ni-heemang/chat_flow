@@ -1,0 +1,136 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: flowchat
+    
+  datasource:
+    url: jdbc:mysql://localhost:3306/flowchat?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: 
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        
+  security:
+    user:
+      name: admin
+      password: admin
+      
+# JWT 설정
+jwt:
+  secret: flowchatSecretKeyForJwtTokenGenerationAndValidation2024
+  expiration: 86400000 # 24시간 (밀리초)
+
+# CORS 설정
+cors:
+  allowed-origins:
+    - http://localhost:3000
+    - http://localhost:5173
+    - http://localhost:8080
+    - http://localhost:5174
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+
+# 로깅 설정
+logging:
+  level:
+    com.flowchat: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    
+# WebSocket 설정
+websocket:
+  allowed-origins:
+    - http://localhost:3000
+    - http://localhost:5173
+    - http://localhost:8080
+
+# LLM 분석 설정
+llm:
+  provider: "openai"  # openai, claude, gemini, ollama 등
+  api:
+    key: "${LLM_API_KEY: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}"
+    url: "${LLM_API_URL:https://api.openai.com/v1/chat/completions}"
+  model: "${LLM_MODEL:gpt-3.5-turbo}"
+  max-tokens: 1000
+  temperature: 0.3
+  
+  # 폴백 설정
+  fallback:
+    enabled: true
+    timeout-seconds: 10
+    max-retries: 2
+  
+  # 배치 처리 설정
+  batch:
+    enabled: false
+    size: 5
+    delay-seconds: 2
+    
+  # 캐시 설정
+  cache:
+    enabled: true
+    ttl-minutes: 30
+    max-size: 1000
+
+# 비동기 처리 설정
+async:
+  core-pool-size: 5
+  max-pool-size: 20
+  queue-capacity: 100
+  thread-name-prefix: "llm-analysis-"
+
+---
+# 개발 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: dev
+  
+llm:
+  model: "gpt-3.5-turbo"
+  max-tokens: 500
+  fallback:
+    timeout-seconds: 5
+
+---
+# 운영 환경 설정  
+spring:
+  config:
+    activate:
+      on-profile: prod
+  
+llm:
+  model: "gpt-4"
+  max-tokens: 1500
+  fallback:
+    timeout-seconds: 15
+  batch:
+    enabled: true
+    size: 10
+
+---
+# 테스트 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: test
+  
+llm:
+  provider: "mock"
+  api:
+    key: "test-key"
+  fallback:
+    enabled: false

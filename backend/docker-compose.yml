@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: flowchat-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: flowchat
+      MYSQL_USER: ${DB_USERNAME:-flowchat}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-flowchatpassword}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - flowchat-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    build: .
+    container_name: flowchat-backend
+    environment:
+      SPRING_DATASOURCE_URL: ${DB_URL:-jdbc:mysql://mysql:3306/flowchat?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-flowchat}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-flowchatpassword}
+      LLM_API_KEY: ${LLM_API_KEY}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - flowchat-network
+    volumes:
+      - ./logs:/app/logs
+
+volumes:
+  mysql_data:
+
+networks:
+  flowchat-network:
+    driver: bridge
