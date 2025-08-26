@@ -200,6 +200,30 @@ export const analysisService = {
       );
     }
   },
+
+  // 채팅방 목적 분석
+  async getRoomPurposeAnalysis(roomId) {
+    try {
+      const response = await api.get(`/analysis/rooms/${roomId}/purpose`);
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || '채팅방 목적 분석을 불러오는 중 오류가 발생했습니다.'
+      );
+    }
+  },
+
+  // 채팅방 활발한 시간대 분석
+  async getRoomPeakHours(roomId) {
+    try {
+      const response = await api.get(`/analysis/rooms/${roomId}/peak-hours`);
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || '활발한 시간대 분석을 불러오는 중 오류가 발생했습니다.'
+      );
+    }
+  },
 };
 
 export default analysisService;

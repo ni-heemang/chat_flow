@@ -631,6 +631,50 @@ public class ChatAnalysisController {
     }
 
     /**
+     * 채팅방 목적 분석
+     */
+    @GetMapping("/rooms/{roomId}/purpose")
+    @Operation(summary = "채팅방 목적 분석", description = "LLM을 통해 채팅방의 주요 목적을 분석합니다")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @ApiResponse(responseCode = "401", description = "인증 실패")
+    public ResponseEntity<Map<String, Object>> getRoomPurposeAnalysis(
+            @Parameter(description = "채팅방 ID") @PathVariable Long roomId,
+            Authentication authentication) {
+        
+        logger.info("채팅방 목적 분석 조회: roomId={}, user={}", roomId, authentication.getName());
+        
+        try {
+            Map<String, Object> purposeAnalysis = chatAnalysisService.analyzeRoomPurpose(roomId);
+            return ResponseEntity.ok(purposeAnalysis);
+        } catch (Exception e) {
+            logger.error("채팅방 목적 분석 실패: roomId={}, error={}", roomId, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * 채팅방 활발한 시간대 분석
+     */
+    @GetMapping("/rooms/{roomId}/peak-hours")
+    @Operation(summary = "활발한 시간대 분석", description = "채팅방에서 가장 활발하게 소통이 이루어지는 시간대를 분석합니다")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @ApiResponse(responseCode = "401", description = "인증 실패")
+    public ResponseEntity<Map<String, Object>> getRoomPeakHours(
+            @Parameter(description = "채팅방 ID") @PathVariable Long roomId,
+            Authentication authentication) {
+        
+        logger.info("활발한 시간대 분석 조회: roomId={}, user={}", roomId, authentication.getName());
+        
+        try {
+            Map<String, Object> peakHoursAnalysis = chatAnalysisService.analyzeRoomPeakHours(roomId);
+            return ResponseEntity.ok(peakHoursAnalysis);
+        } catch (Exception e) {
+            logger.error("활발한 시간대 분석 실패: roomId={}, error={}", roomId, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
      * 사용자가 참여 중인 채팅방 목록 조회 (분석용 드롭다운)
      */
     @GetMapping("/user/joined-rooms")

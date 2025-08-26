@@ -234,6 +234,7 @@ const AnalysisPanel = ({ roomId, compact = false }) => {
           participationData={participationData}
           hourlyActivityData={hourlyActivityData}
           lastUpdated={lastUpdated}
+          roomId={roomId}
         />
       )}
 

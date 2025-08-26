@@ -124,6 +124,40 @@ public class LlmAnalysisService {
     }
 
     /**
+     * 커스텀 프롬프트를 사용한 LLM 분석
+     */
+    public CompletableFuture<Map<String, Object>> analyzeCustomPrompt(String prompt) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                logger.debug("커스텀 프롬프트 LLM 분석 시작: {}", prompt.substring(0, Math.min(50, prompt.length())));
+                
+                String response = callLlm(prompt);
+                
+                // 응답이 JSON 형태인지 확인하고 파싱
+                try {
+                    return objectMapper.readValue(response, Map.class);
+                } catch (Exception parseException) {
+                    // JSON이 아닌 경우, 텍스트 응답으로 처리
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("purpose", response.trim());
+                    result.put("confidence", 0.8);
+                    return result;
+                }
+                
+            } catch (Exception e) {
+                logger.error("커스텀 프롬프트 LLM 분석 실패: error={}", e.getMessage());
+                
+                // 폴백 응답
+                Map<String, Object> fallback = new HashMap<>();
+                fallback.put("purpose", "이 채팅방은 다양한 주제로 소통하는 공간입니다.");
+                fallback.put("confidence", 0.1);
+                fallback.put("error", "LLM 분석 실패");
+                return fallback;
+            }
+        });
+    }
+
+    /**
      * LLM API 호출
      */
     private String callLlm(String prompt) throws Exception {

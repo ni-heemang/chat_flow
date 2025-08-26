@@ -6,19 +6,19 @@ spring:
     name: flowchat
     
   datasource:
-    url: jdbc:mysql://localhost:3306/flowchat?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: 
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/flowchat?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
     
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: true
+        format_sql: false
         
   security:
     user:
@@ -30,13 +30,9 @@ jwt:
   secret: flowchatSecretKeyForJwtTokenGenerationAndValidation2024
   expiration: 86400000 # 24시간 (밀리초)
 
-# CORS 설정
+# CORS 설정 (환경변수로 설정 가능)
 cors:
-  allowed-origins:
-    - http://localhost:3000
-    - http://localhost:5173
-    - http://localhost:8080
-    - http://localhost:5174
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost:5174}
   allowed-methods: GET,POST,PUT,DELETE,OPTIONS
   allowed-headers: "*"
   allow-credentials: true
@@ -44,18 +40,15 @@ cors:
 # 로깅 설정
 logging:
   level:
-    com.flowchat: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.flowchat: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
     
 # WebSocket 설정
 websocket:
-  allowed-origins:
-    - http://localhost:3000
-    - http://localhost:5173
-    - http://localhost:8080
+  allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8080}
 
 # LLM 분석 설정
 llm:
@@ -98,7 +91,21 @@ spring:
   config:
     activate:
       on-profile: dev
-  
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# 로깅 설정
+logging:
+  level:
+    com.flowchat: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
 llm:
   model: "gpt-3.5-turbo"
   max-tokens: 500
@@ -111,7 +118,30 @@ spring:
   config:
     activate:
       on-profile: prod
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# 로깅 설정
+logging:
+  level:
+    com.flowchat: WARN
+    org.springframework.web: ERROR
+    org.springframework.security: ERROR
+    org.hibernate.SQL: ERROR
+    org.hibernate.type.descriptor.sql.BasicBinder: ERROR
+    org.springframework.boot.actuate: INFO
+
+# CORS 설정 - EC2 환경에 맞게 설정
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
   
+# WebSocket 설정
+websocket:
+  allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:*}
+
 llm:
   model: "gpt-4"
   max-tokens: 1500

@@ -1,156 +1,179 @@
-import { Box, Typography, Paper, Grid, Card, CardContent, Chip } from '@mui/material';
+import { Box, Typography, Paper, Grid, Card, CardContent, Chip, Divider } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   People as PeopleIcon,
   Message as MessageIcon,
   Schedule as ScheduleIcon,
   Analytics as AnalyticsIcon,
+  Flag as FlagIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
+import { useState, useEffect } from 'react';
+import analysisService from '../../services/analysisService';
 
-const RealtimeStats = ({ analysisStats, keywordData, participationData, hourlyActivityData, lastUpdated }) => {
-  // 통계 계산
-  const totalMessages = participationData?.userParticipation?.reduce((sum, user) => sum + user.messageCount, 0) || 0;
-  const totalKeywords = keywordData?.totalKeywords || 0;
-  const totalUsers = participationData?.totalUsers || 0;
-  const peakHour = hourlyActivityData?.hourlyActivity?.reduce((max, current) => 
-    current.messageCount > max.messageCount ? current : max
-  , { hour: 0, messageCount: 0 });
+const RealtimeStats = ({ analysisStats, keywordData, participationData, hourlyActivityData, lastUpdated, roomId }) => {
+  const [purposeData, setPurposeData] = useState(null);
+  const [peakHoursData, setPeakHoursData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const statsCards = [
-    {
-      title: '총 메시지',
-      value: totalMessages,
-      icon: <MessageIcon color="primary" sx={{ fontSize: 30 }} />,
-      color: 'primary.main',
-      suffix: '개',
-    },
-    {
-      title: '활성 사용자',
-      value: totalUsers,
-      icon: <PeopleIcon color="success" sx={{ fontSize: 30 }} />,
-      color: 'success.main',
-      suffix: '명',
-    },
-    {
-      title: '키워드 수',
-      value: totalKeywords,
-      icon: <AnalyticsIcon color="info" sx={{ fontSize: 30 }} />,
-      color: 'info.main',
-      suffix: '개',
-    },
-    {
-      title: '최고 활동 시간',
-      value: peakHour?.hour !== undefined ? `${peakHour.hour}시` : '-',
-      icon: <ScheduleIcon color="warning" sx={{ fontSize: 30 }} />,
-      color: 'warning.main',
-      suffix: '',
-      subtitle: peakHour?.messageCount ? `${peakHour.messageCount}개 메시지` : '',
-    },
-  ];
+  // 채팅방 목적과 활발한 시간대 데이터 로드
+  useEffect(() => {
+    if (roomId) {
+      fetchPurposeAndPeakHours();
+    }
+  }, [roomId]);
+
+  const fetchPurposeAndPeakHours = async () => {
+    if (loading) return;
+    
+    setLoading(true);
+    try {
+      const [purposeResult, peakHoursResult] = await Promise.all([
+        analysisService.getRoomPurposeAnalysis(roomId),
+        analysisService.getRoomPeakHours(roomId)
+      ]);
+      
+      setPurposeData(purposeResult);
+      setPeakHoursData(peakHoursResult);
+    } catch (error) {
+      console.error('Purpose and peak hours fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h6" display="flex" alignItems="center">
-          <TrendingUpIcon sx={{ mr: 1 }} />
-          실시간 통계
-        </Typography>
-        <Box display="flex" alignItems="center" gap={1}>
-          {analysisStats?.hasRealtimeData && (
-            <Chip 
-              label="실시간" 
-              color="success" 
-              size="small" 
-              variant="outlined" 
-            />
-          )}
-          {lastUpdated && (
-            <Typography variant="caption" color="text.secondary">
-              마지막 업데이트: {new Date(lastUpdated).toLocaleString()}
+      {/* 채팅방 목적 및 활발한 시간대 */}
+      {(purposeData || peakHoursData) && (
+        <>
+          <Box>
+            <Typography variant="h6" display="flex" alignItems="center" mb={2}>
+              <FlagIcon sx={{ mr: 1 }} />
+              채팅방 인사이트
             </Typography>
-          )}
-        </Box>
-      </Box>
+            
+            <Grid container spacing={2}>
+              {/* 채팅방 목적 */}
+              {purposeData && (
+                <Grid item xs={12}>
+                  <Card 
+                    elevation={1} 
+                    sx={{ 
+                      borderLeft: 4,
+                      borderLeftColor: 'secondary.main',
+                      mb: 2
+                    }}
+                  >
+                    <CardContent>
+                      <Box display="flex" alignItems="flex-start" gap={2}>
+                        <FlagIcon color="secondary" sx={{ mt: 0.5 }} />
+                        <Box flex={1}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            채팅방의 주요 목적
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 'medium', mb: 1 }}>
+                            {purposeData.purpose || '분석 중입니다...'}
+                          </Typography>
+                          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                            {purposeData.confidence && (
+                              <Chip 
+                                label={`신뢰도 ${Math.round(purposeData.confidence * 100)}%`}
+                                size="small"
+                                color="secondary"
+                                variant="outlined"
+                              />
+                            )}
+                            {purposeData.analyzedMessages && (
+                              <Chip 
+                                label={`${purposeData.analyzedMessages}개 메시지 분석`}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )}
 
-      <Grid container spacing={2}>
-        {statsCards.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card 
-              elevation={1} 
-              sx={{ 
-                height: '100%',
-                borderLeft: 4,
-                borderLeftColor: stat.color,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  elevation: 4,
-                  transform: 'translateY(-2px)',
-                }
-              }}
-            >
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {stat.title}
-                    </Typography>
-                    <Typography variant="h4" component="div" sx={{ color: stat.color, fontWeight: 'bold' }}>
-                      {stat.value}
-                      {stat.suffix && (
-                        <Typography component="span" variant="h6" color="text.secondary">
-                          {stat.suffix}
-                        </Typography>
-                      )}
-                    </Typography>
-                    {stat.subtitle && (
-                      <Typography variant="caption" color="text.secondary">
-                        {stat.subtitle}
-                      </Typography>
-                    )}
-                  </Box>
-                  <Box>
-                    {stat.icon}
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+              {/* 활발한 시간대 */}
+              {peakHoursData && (
+                <Grid item xs={12}>
+                  <Card 
+                    elevation={1} 
+                    sx={{ 
+                      borderLeft: 4,
+                      borderLeftColor: 'info.main',
+                    }}
+                  >
+                    <CardContent>
+                      <Box display="flex" alignItems="flex-start" gap={2}>
+                        <AccessTimeIcon color="info" sx={{ mt: 0.5 }} />
+                        <Box flex={1}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            가장 활발한 시간대
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'info.main', mb: 1 }}>
+                            {peakHoursData.peakHour || '정보 없음'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {peakHoursData.peakHourDescription || '활동 패턴을 분석할 수 없습니다.'}
+                          </Typography>
+                          
+                          {/* 인사이트 표시 */}
+                          {peakHoursData.insights && peakHoursData.insights.length > 0 && (
+                            <Box sx={{ mb: 2 }}>
+                              {peakHoursData.insights.map((insight, index) => (
+                                <Typography 
+                                  key={index}
+                                  variant="body2" 
+                                  sx={{ 
+                                    color: 'text.secondary',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    mb: 0.5,
+                                    '&:before': {
+                                      content: '"💡"',
+                                      marginRight: '8px'
+                                    }
+                                  }}
+                                >
+                                  {insight}
+                                </Typography>
+                              ))}
+                            </Box>
+                          )}
 
-      {analysisStats && (
-        <Box mt={3} p={2} sx={{ backgroundColor: 'grey.50', borderRadius: 1 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            분석 통계 요약
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="body2">
-                총 분석: <strong>{analysisStats.totalAnalysisCount || 0}회</strong>
-              </Typography>
+                          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                            {peakHoursData.totalMessages && (
+                              <Chip 
+                                label={`총 ${peakHoursData.totalMessages}개 메시지`}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                            {peakHoursData.analysisPeriod && (
+                              <Chip 
+                                label={peakHoursData.analysisPeriod}
+                                size="small"
+                                color="info"
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )}
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="body2">
-                키워드 분석: <strong>{analysisStats.keywordAnalysisCount || 0}회</strong>
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="body2">
-                시간 패턴: <strong>{analysisStats.timePatternCount || 0}회</strong>
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="body2">
-                참여도 분석: <strong>{analysisStats.participationCount || 0}회</strong>
-              </Typography>
-            </Grid>
-          </Grid>
-          {analysisStats.latestAnalysisDate && (
-            <Typography variant="caption" color="text.secondary" mt={1} display="block">
-              최근 분석: {new Date(analysisStats.latestAnalysisDate).toLocaleString()}
-            </Typography>
-          )}
-        </Box>
+          </Box>
+        </>
       )}
     </Paper>
   );

@@ -959,6 +959,178 @@ public class ChatAnalysisService {
     }
 
     /**
+     * 채팅방 목적 분석 (LLM 기반)
+     */
+    public Map<String, Object> analyzeRoomPurpose(Long roomId) {
+        logger.info("채팅방 목적 분석 시작: roomId={}", roomId);
+        
+        try {
+            // 최근 50개 메시지 조회
+            List<ChatMessage> recentMessages = chatMessageRepository
+                .findByRoomIdAndMessageTypeAndIsDeletedFalseOrderByTimestampDesc(
+                    roomId, ChatMessage.MessageType.TEXT)
+                .stream()
+                .limit(50)
+                .collect(Collectors.toList());
+            
+            if (recentMessages.isEmpty()) {
+                return createEmptyPurposeAnalysis(roomId, "분석할 메시지가 없습니다.");
+            }
+            
+            // 메시지 내용 결합
+            String combinedContent = recentMessages.stream()
+                .map(ChatMessage::getContent)
+                .collect(Collectors.joining(" "));
+            
+            // LLM을 통한 목적 분석
+            String prompt = String.format(
+                "다음 채팅방 대화 내용을 분석하여 이 채팅방의 주요 목적을 한 문장으로 설명해주세요. " +
+                "대화 내용: \"%s\"", 
+                combinedContent.length() > 1000 ? combinedContent.substring(0, 1000) + "..." : combinedContent
+            );
+            
+            CompletableFuture<Map<String, Object>> analysis = llmAnalysisService.analyzeCustomPrompt(prompt);
+            Map<String, Object> result = analysis.get();
+            
+            String purpose = (String) result.getOrDefault("purpose", "이 채팅방은 다양한 주제로 소통하는 공간입니다.");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("roomId", roomId);
+            response.put("purpose", purpose);
+            response.put("confidence", result.getOrDefault("confidence", 0.8));
+            response.put("analyzedMessages", recentMessages.size());
+            response.put("lastUpdated", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            
+            logger.info("채팅방 목적 분석 완료: roomId={}, purpose={}", roomId, purpose);
+            return response;
+            
+        } catch (Exception e) {
+            logger.error("채팅방 목적 분석 실패: roomId={}, error={}", roomId, e.getMessage());
+            return createEmptyPurposeAnalysis(roomId, "목적 분석 중 오류가 발생했습니다.");
+        }
+    }
+    
+    /**
+     * 채팅방 활발한 시간대 분석
+     */
+    public Map<String, Object> analyzeRoomPeakHours(Long roomId) {
+        logger.info("채팅방 활발한 시간대 분석 시작: roomId={}", roomId);
+        
+        try {
+            // 최근 7일간의 메시지 조회
+            LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+            List<ChatMessage> recentMessages = chatMessageRepository
+                .findByRoomIdAndTimestampAfterAndIsDeletedFalse(roomId, weekAgo);
+            
+            if (recentMessages.isEmpty()) {
+                return createEmptyPeakHoursAnalysis(roomId, "분석할 메시지가 없습니다.");
+            }
+            
+            // 시간대별 메시지 수 집계
+            Map<Integer, Integer> hourlyCount = new HashMap<>();
+            for (ChatMessage message : recentMessages) {
+                if (message.getMessageType() != ChatMessage.MessageType.SYSTEM) {
+                    int hour = message.getTimestamp().getHour();
+                    hourlyCount.merge(hour, 1, Integer::sum);
+                }
+            }
+            
+            // 가장 활발한 시간대 찾기
+            List<Map.Entry<Integer, Integer>> sortedHours = hourlyCount.entrySet().stream()
+                .sorted(Map.Entry.<Integer, Integer>comparingByValue().reversed())
+                .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("roomId", roomId);
+            
+            if (sortedHours.isEmpty()) {
+                response.put("peakHour", "정보 없음");
+                response.put("peakHourDescription", "활동 패턴을 분석할 수 없습니다.");
+            } else {
+                int peakHour = sortedHours.get(0).getKey();
+                int peakCount = sortedHours.get(0).getValue();
+                
+                String description = String.format(
+                    "%d시가 가장 활발한 시간대입니다 (%d개 메시지)", 
+                    peakHour, peakCount
+                );
+                
+                // 추가 인사이트
+                List<String> insights = new ArrayList<>();
+                if (peakHour >= 9 && peakHour <= 18) {
+                    insights.add("업무 시간대에 활발한 소통이 이루어집니다.");
+                } else if (peakHour >= 19 && peakHour <= 23) {
+                    insights.add("저녁 시간대에 활발한 대화가 이루어집니다.");
+                } else {
+                    insights.add("특별한 시간대에 소통이 활발합니다.");
+                }
+                
+                response.put("peakHour", peakHour + ":00");
+                response.put("peakHourDescription", description);
+                response.put("insights", insights);
+                response.put("hourlyDistribution", createHourlyDistribution(hourlyCount));
+            }
+            
+            response.put("totalMessages", recentMessages.size());
+            response.put("analysisPeriod", "최근 7일");
+            response.put("lastUpdated", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            
+            logger.info("채팅방 활발한 시간대 분석 완료: roomId={}", roomId);
+            return response;
+            
+        } catch (Exception e) {
+            logger.error("채팅방 활발한 시간대 분석 실패: roomId={}, error={}", roomId, e.getMessage());
+            return createEmptyPeakHoursAnalysis(roomId, "활발한 시간대 분석 중 오류가 발생했습니다.");
+        }
+    }
+    
+    /**
+     * 빈 목적 분석 결과 생성
+     */
+    private Map<String, Object> createEmptyPurposeAnalysis(Long roomId, String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("roomId", roomId);
+        response.put("purpose", "분석할 수 있는 데이터가 부족합니다.");
+        response.put("confidence", 0.0);
+        response.put("analyzedMessages", 0);
+        response.put("lastUpdated", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        response.put("error", message);
+        return response;
+    }
+    
+    /**
+     * 빈 활발한 시간대 분석 결과 생성
+     */
+    private Map<String, Object> createEmptyPeakHoursAnalysis(Long roomId, String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("roomId", roomId);
+        response.put("peakHour", "정보 없음");
+        response.put("peakHourDescription", "활동 패턴을 분석할 수 없습니다.");
+        response.put("insights", List.of("분석할 데이터가 부족합니다."));
+        response.put("totalMessages", 0);
+        response.put("analysisPeriod", "최근 7일");
+        response.put("lastUpdated", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        response.put("error", message);
+        return response;
+    }
+    
+    /**
+     * 시간대별 분포 데이터 생성
+     */
+    private List<Map<String, Object>> createHourlyDistribution(Map<Integer, Integer> hourlyCount) {
+        List<Map<String, Object>> distribution = new ArrayList<>();
+        
+        for (int hour = 0; hour < 24; hour++) {
+            Map<String, Object> hourData = new HashMap<>();
+            hourData.put("hour", hour);
+            hourData.put("count", hourlyCount.getOrDefault(hour, 0));
+            distribution.add(hourData);
+        }
+        
+        return distribution;
+    }
+
+    /**
      * 순환 의존성 해결을 위한 지연 로딩
      */
     private AnalysisNotificationService getAnalysisNotificationService() {
