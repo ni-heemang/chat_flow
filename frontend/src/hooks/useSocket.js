@@ -15,11 +15,15 @@ const useSocket = () => {
       return;
     }
 
-    // 환경별 WebSocket URL 설정 (api.js와 동일한 방식)
-    const wsUrl = import.meta.env.MODE === 'production' 
-      ? `${window.location.protocol}//${window.location.host}/ws`
-      : 'http://localhost:8080/ws';
+    // 환경별 WebSocket URL 설정 - 무조건 현재 호스트 사용 (디버깅용)
+    const wsUrl = `${window.location.protocol}//${window.location.host}/ws`;
     
+    console.log('=== WebSocket Debug Info ===');
+    console.log('import.meta.env.MODE:', import.meta.env.MODE);
+    console.log('window.location.host:', window.location.host);
+    console.log('window.location.protocol:', window.location.protocol);
+    console.log('Calculated wsUrl:', wsUrl);
+    console.log('==========================');
     console.log('Attempting WebSocket connection to:', wsUrl);
     console.log('User:', user);
     console.log('Token available:', !!accessToken);

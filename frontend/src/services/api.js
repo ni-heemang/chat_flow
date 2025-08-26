@@ -1,9 +1,8 @@
 import axios from 'axios';
 import useUserStore from '../store/userStore';
 
-const API_BASE_URL = import.meta.env.MODE === 'production' 
-  ? '/api' 
-  : 'http://localhost:8080/api';
+// 무조건 현재 호스트 사용 (디버깅용)
+const API_BASE_URL = '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
