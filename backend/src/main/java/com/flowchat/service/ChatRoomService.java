@@ -101,15 +101,35 @@ public class ChatRoomService {
         
         ChatRoom savedRoom = chatRoomRepository.save(chatRoom);
         
-        logger.info("채팅방 생성 완료: roomId={}, name={}", savedRoom.getId(), savedRoom.getName());
-        
-        return ChatRoomResponse.from(savedRoom, user.getName());
+        // 생성자를 채팅방에 자동 참여시킴
+        try {
+            ChatRoomMember creatorMember = chatRoomMemberService.addMemberToRoom(savedRoom.getId(), userId);
+            logger.info("채팅방 생성자 자동 참여 완료: roomId={}, userId={}, memberId={}", 
+                       savedRoom.getId(), userId, creatorMember.getId());
+            
+            // 트랜잭션 내에서 참여자 수를 직접 설정 (트랜잭션 커밋 전 조회 문제 해결)
+            ChatRoomResponse response = ChatRoomResponse.from(savedRoom, user.getName());
+            response.setCurrentParticipants(1); // 생성자 1명
+            
+            logger.info("채팅방 생성 완료: roomId={}, name={}, participants={}", 
+                       savedRoom.getId(), savedRoom.getName(), 1);
+            
+            return response;
+            
+        } catch (Exception e) {
+            logger.error("채팅방 생성자 자동 참여 실패: roomId={}, userId={}, error={}", 
+                        savedRoom.getId(), userId, e.getMessage());
+            // 참여 실패 시에도 채팅방은 생성되었으므로 0명으로 반환
+            ChatRoomResponse response = ChatRoomResponse.from(savedRoom, user.getName());
+            response.setCurrentParticipants(0);
+            return response;
+        }
     }
     
     /**
      * 모든 공개 채팅방 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ChatRoomResponse> getPublicChatRooms() {
         logger.debug("공개 채팅방 목록 조회");
         
@@ -128,7 +148,7 @@ public class ChatRoomService {
     /**
      * 모든 비공개 채팅방 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ChatRoomResponse> getPrivateChatRooms() {
         logger.debug("비공개 채팅방 목록 조회");
         
@@ -139,7 +159,7 @@ public class ChatRoomService {
                 String createdByName = userRepository.findById(room.getCreatedBy())
                     .map(User::getName)
                     .orElse("알 수 없음");
-                return ChatRoomResponse.from(room, createdByName);
+                return createResponseWithRealParticipants(room, createdByName);
             })
             .collect(Collectors.toList());
     }
@@ -147,7 +167,7 @@ public class ChatRoomService {
     /**
      * 모든 활성 채팅방 조회 (공개 + 비공개)
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ChatRoomResponse> getAllChatRooms() {
         logger.debug("전체 채팅방 목록 조회");
         
@@ -177,18 +197,19 @@ public class ChatRoomService {
             .map(User::getName)
             .orElse("알 수 없음");
         
-        return ChatRoomResponse.from(chatRoom, createdByName);
+        return createResponseWithRealParticipants(chatRoom, createdByName);
     }
     
     /**
      * 사용자가 참여한 채팅방 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ChatRoomResponse> getMyChatRooms(Long userId) {
-        logger.debug("사용자 참여 채팅방 목록 조회: userId={}", userId);
+        logger.info("사용자 참여 채팅방 목록 조회: userId={}", userId);
         
         // 사용자가 활성 멤버인 채팅방 멤버십 조회
         List<ChatRoomMember> membershipList = chatRoomMemberRepository.findActiveByUserId(userId);
+        logger.info("조회된 멤버십 수: {} for userId={}", membershipList.size(), userId);
         
         if (membershipList.isEmpty()) {
             logger.debug("사용자가 참여 중인 채팅방이 없음: userId={}", userId);
@@ -209,7 +230,7 @@ public class ChatRoomService {
                     String createdByName = userRepository.findById(room.getCreatedBy())
                         .map(User::getName)
                         .orElse("알 수 없음");
-                    return ChatRoomResponse.from(room, createdByName);
+                    return createResponseWithRealParticipants(room, createdByName);
                 })
                 .collect(Collectors.toList());
         
@@ -259,7 +280,7 @@ public class ChatRoomService {
         logger.info("채팅방 참여 완료: roomId={}, userId={}, totalMembers={}", 
                    roomId, userId, updatedMemberCount);
         
-        return ChatRoomResponse.from(savedRoom, user.getName());
+        return createResponseWithRealParticipants(savedRoom, user.getName());
     }
     
     /**
@@ -293,7 +314,7 @@ public class ChatRoomService {
     /**
      * 채팅방 검색
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ChatRoomResponse> searchChatRooms(String keyword) {
         logger.debug("채팅방 검색: keyword={}", keyword);
         
@@ -308,7 +329,7 @@ public class ChatRoomService {
                 String createdByName = userRepository.findById(room.getCreatedBy())
                     .map(User::getName)
                     .orElse("알 수 없음");
-                return ChatRoomResponse.from(room, createdByName);
+                return createResponseWithRealParticipants(room, createdByName);
             })
             .collect(Collectors.toList());
     }
@@ -316,7 +337,7 @@ public class ChatRoomService {
     /**
      * 참여 가능한 채팅방 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ChatRoomResponse> getAvailableChatRooms() {
         logger.debug("참여 가능한 채팅방 목록 조회");
         
@@ -327,7 +348,7 @@ public class ChatRoomService {
                 String createdByName = userRepository.findById(room.getCreatedBy())
                     .map(User::getName)
                     .orElse("알 수 없음");
-                return ChatRoomResponse.from(room, createdByName);
+                return createResponseWithRealParticipants(room, createdByName);
             })
             .collect(Collectors.toList());
     }
@@ -335,7 +356,7 @@ public class ChatRoomService {
     /**
      * 인기 채팅방 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ChatRoomResponse> getPopularChatRooms() {
         logger.debug("인기 채팅방 목록 조회");
         
@@ -346,7 +367,7 @@ public class ChatRoomService {
                 String createdByName = userRepository.findById(room.getCreatedBy())
                     .map(User::getName)
                     .orElse("알 수 없음");
-                return ChatRoomResponse.from(room, createdByName);
+                return createResponseWithRealParticipants(room, createdByName);
             })
             .collect(Collectors.toList());
     }
@@ -400,7 +421,7 @@ public class ChatRoomService {
         
         logger.info("채팅방 업데이트 완료: roomId={}", roomId);
         
-        return ChatRoomResponse.from(updatedRoom, createdByName);
+        return createResponseWithRealParticipants(updatedRoom, createdByName);
     }
     
     /**
@@ -442,7 +463,7 @@ public class ChatRoomService {
     /**
      * 사용자가 참여 중인 채팅방 목록 조회 (분석용)
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ChatRoomResponse> getUserJoinedRooms(Long userId) {
         logger.debug("사용자 참여 채팅방 조회: userId={}", userId);
         
@@ -468,7 +489,7 @@ public class ChatRoomService {
                     String createdByName = userRepository.findById(room.getCreatedBy())
                         .map(User::getName)
                         .orElse("알 수 없음");
-                    return ChatRoomResponse.from(room, createdByName);
+                    return createResponseWithRealParticipants(room, createdByName);
                 })
                 .collect(Collectors.toList());
         

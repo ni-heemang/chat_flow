@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +27,9 @@ public class ChatRoomMemberService {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private EntityManager entityManager;
     
     /**
      * 채팅방에 사용자 추가 (멤버십 생성)
@@ -54,7 +58,13 @@ public class ChatRoomMemberService {
             ChatRoomMember newMember = new ChatRoomMember(roomId, userId);
             ChatRoomMember savedMember = chatRoomMemberRepository.save(newMember);
             
-            logger.info("새 채팅방 멤버십 생성: id={}, roomId={}, userId={}", savedMember.getId(), roomId, userId);
+            logger.info("새 채팅방 멤버십 생성: id={}, roomId={}, userId={}, isActive={}", 
+                       savedMember.getId(), roomId, userId, savedMember.getIsActive());
+            
+            // 트랜잭션 내에서 즉시 flush하여 다른 조회에서 확인 가능하도록 함
+            entityManager.flush();
+            logger.debug("멤버십 저장 후 EntityManager flush 완료");
+            
             return savedMember;
             
         } catch (Exception e) {
@@ -119,7 +129,7 @@ public class ChatRoomMemberService {
     /**
      * 채팅방의 모든 활성 멤버 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ChatRoomMemberInfo> getRoomMembers(Long roomId) {
         logger.debug("채팅방 멤버 목록 조회: roomId={}", roomId);
         
@@ -144,15 +154,17 @@ public class ChatRoomMemberService {
     /**
      * 채팅방의 활성 멤버 수 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public long getRoomMemberCount(Long roomId) {
-        return chatRoomMemberRepository.countActiveByRoomId(roomId);
+        long count = chatRoomMemberRepository.countActiveByRoomId(roomId);
+        logger.debug("채팅방 활성 멤버 수 조회: roomId={}, count={}", roomId, count);
+        return count;
     }
     
     /**
      * 채팅방의 온라인 멤버 수 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public long getRoomOnlineCount(Long roomId) {
         return chatRoomMemberRepository.countOnlineByRoomId(roomId);
     }
@@ -160,7 +172,7 @@ public class ChatRoomMemberService {
     /**
      * 사용자가 특정 채팅방의 활성 멤버인지 확인
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public boolean isMemberOfRoom(Long roomId, Long userId) {
         return chatRoomMemberRepository.findActiveByRoomIdAndUserId(roomId, userId).isPresent();
     }

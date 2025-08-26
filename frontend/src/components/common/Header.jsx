@@ -57,7 +57,7 @@ const Header = () => {
                 sx={{ p: 0.5 }}
               >
                 <Avatar sx={{ width: 32, height: 32 }}>
-                  {(user.name || user.username)[0].toUpperCase()}
+                  {((user?.name || user?.username || 'User')[0] || 'U').toUpperCase()}
                 </Avatar>
               </IconButton>
               
@@ -85,8 +85,8 @@ const Header = () => {
               >
                 <MenuItem disabled>
                   <ListItemText 
-                    primary={user.name || user.username} 
-                    secondary={user.username}
+                    primary={user?.name || user?.username || '사용자'} 
+                    secondary={user?.username || '미설정'}
                   />
                 </MenuItem>
                 <MenuItem onClick={handleUserMenuClose}>

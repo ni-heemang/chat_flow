@@ -164,6 +164,8 @@ const RoomList = () => {
       resetForm();
       // 내 채팅방 탭으로 이동
       setTabValue(1);
+      // 내 채팅방 목록을 새로고침하여 생성된 채팅방이 즉시 표시되도록 함
+      await fetchMyRooms();
     }
   };
 

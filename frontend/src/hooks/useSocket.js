@@ -15,8 +15,11 @@ const useSocket = () => {
       return;
     }
 
-    // 환경별 WebSocket URL 설정 - 무조건 현재 호스트 사용 (디버깅용)
-    const wsUrl = `${window.location.protocol}//${window.location.host}/ws`;
+    // 환경별 WebSocket URL 설정
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const wsUrl = isLocalhost
+      ? 'http://localhost:8080/ws'
+      : `${window.location.protocol}//${window.location.host}/ws`;
     
     console.log('=== WebSocket Debug Info ===');
     console.log('import.meta.env.MODE:', import.meta.env.MODE);

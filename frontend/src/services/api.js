@@ -1,8 +1,11 @@
 import axios from 'axios';
 import useUserStore from '../store/userStore';
 
-// 무조건 현재 호스트 사용 (디버깅용)
-const API_BASE_URL = '/api';
+// 환경별 API URL 설정
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE_URL = isLocalhost 
+  ? 'http://localhost:8080/api' 
+  : '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
