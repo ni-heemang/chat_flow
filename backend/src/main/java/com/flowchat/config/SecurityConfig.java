@@ -94,13 +94,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 허용할 origin 설정
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:8080"
-        ));
+        // 허용할 origin 설정 (EC2 배포시 모든 origin 허용)
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         
         // 허용할 HTTP 메서드
         configuration.setAllowedMethods(Arrays.asList(

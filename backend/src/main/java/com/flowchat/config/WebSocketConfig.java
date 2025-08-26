@@ -33,12 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // WebSocket 연결 엔드포인트 설정
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(
-                    "http://localhost:3000",
-                    "http://localhost:5173", 
-                    "http://localhost:5174",
-                    "http://localhost:8080"
-                )
+                .setAllowedOriginPatterns("*") // EC2 배포시 모든 origin 허용
                 .withSockJS(); // SockJS 폴백 지원
     }
 

@@ -7,7 +7,7 @@ spring:
     
   jpa:
     hibernate:
-      ddl-auto: create-drop # 개발 시 테이블 자동 생성/삭제
+      ddl-auto: update # 개발 시 테이블 자동 생성/삭제
     show-sql: true
     
 logging:

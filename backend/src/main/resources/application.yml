@@ -54,7 +54,7 @@ websocket:
 llm:
   provider: "openai"  # openai, claude, gemini, ollama 등
   api:
-    key: "${LLM_API_KEY:dummy-key-for-development}"
+    key: "${LLM_API_KEY}"
     url: "${LLM_API_URL:https://api.openai.com/v1/chat/completions}"
   model: "${LLM_MODEL:gpt-3.5-turbo}"
   max-tokens: 1000

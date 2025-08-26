@@ -15,12 +15,17 @@ const useSocket = () => {
       return;
     }
 
-    console.log('Attempting WebSocket connection to: http://localhost:8080/ws');
+    // 환경별 WebSocket URL 설정 (api.js와 동일한 방식)
+    const wsUrl = import.meta.env.MODE === 'production' 
+      ? `${window.location.protocol}//${window.location.host}/ws`
+      : 'http://localhost:8080/ws';
+    
+    console.log('Attempting WebSocket connection to:', wsUrl);
     console.log('User:', user);
     console.log('Token available:', !!accessToken);
 
     try {
-      const socket = new SockJS('http://localhost:8080/ws');
+      const socket = new SockJS(wsUrl);
       stompClient.current = new Client({
         webSocketFactory: () => socket,
         connectHeaders: {
