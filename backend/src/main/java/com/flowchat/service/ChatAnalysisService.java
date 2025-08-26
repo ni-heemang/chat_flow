@@ -965,12 +965,13 @@ public class ChatAnalysisService {
         logger.info("채팅방 목적 분석 시작: roomId={}", roomId);
         
         try {
-            // 최근 50개 메시지 조회
+            // 최근 30일간의 메시지 조회 (목적 분석용)
+            LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
             List<ChatMessage> recentMessages = chatMessageRepository
-                .findByRoomIdAndMessageTypeAndIsDeletedFalseOrderByTimestampDesc(
-                    roomId, ChatMessage.MessageType.TEXT)
+                .findByRoomIdAndMessageTypeAndTimestampAfterAndIsDeletedFalseOrderByTimestampDesc(
+                    roomId, ChatMessage.MessageType.TEXT, thirtyDaysAgo)
                 .stream()
-                .limit(50)
+                .limit(100) // 30일 기간에 맞춰 더 많은 메시지 분석
                 .collect(Collectors.toList());
             
             if (recentMessages.isEmpty()) {
@@ -1017,10 +1018,10 @@ public class ChatAnalysisService {
         logger.info("채팅방 활발한 시간대 분석 시작: roomId={}", roomId);
         
         try {
-            // 최근 7일간의 메시지 조회
-            LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+            // 최근 30일간의 메시지 조회
+            LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
             List<ChatMessage> recentMessages = chatMessageRepository
-                .findByRoomIdAndTimestampAfterAndIsDeletedFalse(roomId, weekAgo);
+                .findByRoomIdAndTimestampAfterAndIsDeletedFalse(roomId, thirtyDaysAgo);
             
             if (recentMessages.isEmpty()) {
                 return createEmptyPeakHoursAnalysis(roomId, "분석할 메시지가 없습니다.");
@@ -1072,7 +1073,7 @@ public class ChatAnalysisService {
             }
             
             response.put("totalMessages", recentMessages.size());
-            response.put("analysisPeriod", "최근 7일");
+            response.put("analysisPeriod", "최근 30일");
             response.put("lastUpdated", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             
             logger.info("채팅방 활발한 시간대 분석 완료: roomId={}", roomId);
@@ -1108,7 +1109,7 @@ public class ChatAnalysisService {
         response.put("peakHourDescription", "활동 패턴을 분석할 수 없습니다.");
         response.put("insights", List.of("분석할 데이터가 부족합니다."));
         response.put("totalMessages", 0);
-        response.put("analysisPeriod", "최근 7일");
+        response.put("analysisPeriod", "최근 30일");
         response.put("lastUpdated", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         response.put("error", message);
         return response;

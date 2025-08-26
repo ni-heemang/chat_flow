@@ -49,10 +49,15 @@ const RealtimeStats = ({ analysisStats, keywordData, participationData, hourlyAc
       {(purposeData || peakHoursData) && (
         <>
           <Box>
-            <Typography variant="h6" display="flex" alignItems="center" mb={2}>
-              <FlagIcon sx={{ mr: 1 }} />
-              채팅방 인사이트
-            </Typography>
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+              <Typography variant="h6" display="flex" alignItems="center">
+                <FlagIcon sx={{ mr: 1 }} />
+                채팅방 인사이트
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', fontSize: '13px' }}>
+                * 30일 기반
+              </Typography>
+            </Box>
             
             <Grid container spacing={2}>
               {/* 채팅방 목적 */}

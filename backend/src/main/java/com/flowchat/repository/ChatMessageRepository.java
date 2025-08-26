@@ -163,4 +163,10 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
      * 특정 채팅방의 모든 메시지 조회 (분석용)
      */
     List<ChatMessage> findByRoomIdAndIsDeletedFalseOrderByTimestampDesc(Long roomId);
+
+    /**
+     * 특정 채팅방의 특정 메시지 타입, 특정 날짜 이후 메시지 조회 (목적 분석용)
+     */
+    List<ChatMessage> findByRoomIdAndMessageTypeAndTimestampAfterAndIsDeletedFalseOrderByTimestampDesc(
+        Long roomId, ChatMessage.MessageType messageType, LocalDateTime timestamp);
 }
