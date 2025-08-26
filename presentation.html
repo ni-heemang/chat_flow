@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Chat - AI 기반 실시간 채팅 분석 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1E3A8A 0%, #60A5FA 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .presentation-container {
+            width: 100%;
+            max-width: 1920px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .slide {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 60px;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 슬라이드 1 - 타이틀 */
+        .slide-1 {
+            background: linear-gradient(135deg, #1E3A8A 0%, #60A5FA 50%, #E5E7EB 100%);
+            color: white;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .slide-1 h1 {
+            font-size: 5em;
+            font-weight: 900;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+            animation: fadeInScale 1s ease-out;
+        }
+
+        .slide-1 .subtitle {
+            font-size: 2.5em;
+            font-weight: 300;
+            margin-bottom: 50px;
+            opacity: 0.95;
+            animation: fadeInScale 1.2s ease-out;
+        }
+
+        .slide-1 .tagline {
+            font-size: 1.8em;
+            font-style: italic;
+            opacity: 0.9;
+            animation: fadeInScale 1.4s ease-out;
+        }
+
+        .dev-info {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px 30px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            animation: fadeInScale 1.6s ease-out;
+        }
+
+        .dev-info a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .dev-info a:hover {
+            transform: scale(1.1);
+        }
+
+        .dev-info .divider {
+            width: 2px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .claude-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* 슬라이드 2 - 문제점 */
+        .slide-2 {
+            background: #E5E7EB;
+        }
+
+        .slide-2 h2 {
+            font-size: 3em;
+            color: #1E3A8A;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            flex: 1;
+        }
+
+        .problem-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .problem-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .problem-icon {
+            width: 60px;
+            height: 60px;
+            background: #60A5FA;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .problem-card h3 {
+            font-size: 1.5em;
+            color: #1E3A8A;
+            margin-bottom: 15px;
+        }
+
+        .problem-card ul {
+            list-style: none;
+            color: #666;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .problem-card ul li:before {
+            content: "▸ ";
+            color: #60A5FA;
+            font-weight: bold;
+        }
+
+        /* 슬라이드 3 - 솔루션 */
+        .slide-3 h2 {
+            font-size: 3em;
+            color: #1E3A8A;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .solution-container {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            flex: 1;
+        }
+
+        .ai-flow {
+            flex: 1;
+            background: #E5E7EB;
+            padding: 30px;
+            border-radius: 15px;
+        }
+
+        .flow-step {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #60A5FA;
+            font-size: 1.2em;
+            transition: all 0.3s ease;
+        }
+
+        .flow-step:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .features {
+            flex: 1;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: linear-gradient(90deg, #60A5FA 0%, transparent 100%);
+            border-radius: 10px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateX(10px);
+        }
+
+        .feature-icon {
+            font-size: 2em;
+            margin-right: 20px;
+        }
+
+        .feature-text {
+            font-size: 1.3em;
+        }
+
+        /* 슬라이드 4 - 기대 효과 */
+        .slide-4 {
+            background: linear-gradient(135deg, #E5E7EB 0%, #60A5FA 100%);
+        }
+
+        .slide-4 h2 {
+            font-size: 2.5em;
+            color: #1E3A8A;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .benefits-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 35px;
+            flex: 1;
+        }
+
+        .benefit-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .benefit-section h3 {
+            font-size: 1.6em;
+            color: #1E3A8A;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #60A5FA;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 12px;
+            background: #E5E7EB;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .metric:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-label {
+            font-size: 1.15em;
+            color: #333;
+        }
+
+        .metric-value {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #60A5FA;
+        }
+
+        .quality-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 1.15em;
+            color: #333;
+            border-left: 4px solid #60A5FA;
+            background: #E5E7EB;
+            border-radius: 5px;
+        }
+
+        /* 슬라이드 5 - 기대 효과 */
+        .slide-5 {
+            background: linear-gradient(135deg, #E5E7EB 0%, #60A5FA 100%);
+            padding: 40px 60px;
+        }
+
+        .slide-5 h2 {
+            font-size: 2.2em;
+            color: #1E3A8A;
+            margin-bottom: 15px;
+            margin-top: 0;
+            text-align: center;
+        }
+
+        .benefits-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .benefit-card {
+            background: white;
+            padding: 18px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            transition: all 0.3s ease;
+        }
+
+        .benefit-card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+        }
+
+        .benefit-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #60A5FA;
+        }
+
+        .benefit-icon {
+            font-size: 1.6em;
+            background: linear-gradient(135deg, #1E3A8A 0%, #60A5FA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .benefit-header h3 {
+            font-size: 1.3em;
+            color: #1E3A8A;
+            margin: 0;
+        }
+
+        .benefit-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .benefit-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 6px 8px;
+            background: #E5E7EB;
+            border-radius: 6px;
+            font-size: 0.95em;
+            line-height: 1.3;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .benefit-item:hover {
+            background: linear-gradient(90deg, #60A5FA 0%, #E5E7EB 100%);
+            transform: translateX(3px);
+        }
+
+        .check-mark {
+            color: #60A5FA;
+            font-weight: bold;
+            font-size: 1.1em;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .benefit-item span:last-child {
+            flex: 1;
+        }
+
+        .github-footer {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20fold the 5-page limit. I'll now update the existing slides with GitHub link and Claude Code badge.px 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .github-footer a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .github-footer a:hover {
+            transform: scale(1.1);
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .powered-by {
+            font-size: 1.1em;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .powered-by .badge {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        /* 슬라이드 6 - 프로젝트 정보 */
+        .slide-6 {
+            background: linear-gradient(135deg, #1E3A8A 0%, #60A5FA 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .slide-6 h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .project-info-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        .project-top-section {
+            display: flex;
+            gap: 40px;
+            align-items: stretch;
+            justify-content: center;
+        }
+
+        .github-section, .claude-section {
+            flex: 1;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 35px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            height: 260px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .info-box:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .github-url {
+            font-size: 1.2em;
+            color: white;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .github-url:hover {
+            text-decoration: underline;
+        }
+
+        .info-desc {
+            font-size: 1.05em;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .claude-title {
+            font-size: 1.6em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .claude-percentage {
+            font-size: 3em;
+            font-weight: 900;
+            color: #FFD700;
+            margin: 8px 0;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700;
+            }
+            to {
+                text-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700;
+            }
+        }
+
+        .divider-line-vertical {
+            width: 2px;
+            height: 260px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .demo-section {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .demo-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .demo-content {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .demo-link {
+            flex: 1;
+        }
+
+        .demo-url {
+            color: #FFD700;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .demo-url:hover {
+            text-decoration: underline;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .demo-note {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .divider-line-vertical-small {
+            width: 2px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .test-account {
+            flex: 1;
+            background: rgba(30, 58, 138, 0.3);
+            padding: 12px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .test-title {
+            font-size: 1em;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        .account-info {
+            font-size: 1.1em;
+            font-weight: bold;
+            line-height: 1.6;
+        }
+
+        .account-info span {
+            color: #FFD700;
+            font-family: 'Courier New', monospace;
+        }
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            font-size: 1.2em;
+            color: #999;
+            font-weight: 300;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- 슬라이드 1: 타이틀 -->
+        <div class="slide slide-1">
+            <h1>Flow Chat</h1>
+            <div class="subtitle">AI 기반 실시간 채팅 분석 시스템</div>
+            <div class="tagline">"대화를 넘어, 인사이트로"</div>
+            <div class="slide-number">1 / 6</div>
+        </div>
+
+        <!-- 슬라이드 2: 현재 팀 채팅의 문제점 -->
+        <div class="slide slide-2">
+            <h2>현재 팀 채팅의 3대 문제점</h2>
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">🆕</div>
+                    <h3>신규 회원 문제</h3>
+                    <ul>
+                        <li>과거 대화 맥락 파악 어려움</li>
+                        <li>암묵적 룰·FAQ 학습 시간 과다</li>
+                        <li>반복 질문으로 답변 피로도 증가</li>
+                        <li>질의응답 중 업무 중단 빈번</li>
+                    </ul>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">⏰</div>
+                    <h3>장기 사용자 문제</h3>
+                    <ul>
+                        <li>중요 정보 묻힘·문서화 부재</li>
+                        <li>정보 과부하로 핵심 이슈 누락</li>
+                        <li>불필요한 메시지 반복 확인</li>
+                        <li>소통 패턴 데이터 분석 불가</li>
+                    </ul>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">👥</div>
+                    <h3>공통 문제</h3>
+                    <ul>
+                        <li>구조화·자동 요약 부족</li>
+                        <li>협업 효율성 저하</li>
+                        <li>결정사항 누락으로 혼선 발생</li>
+                        <li>놓친 메시지로 인한 실수 위험</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-number">2 / 6</div>
+        </div>
+
+        <!-- 슬라이드 3: AI 솔루션 -->
+        <div class="slide slide-3">
+            <h2>Flow Chat의 AI 기반 솔루션</h2>
+            <div class="solution-container">
+                <div class="ai-flow">
+                    <div class="flow-step">📝 실시간 메시지 수집</div>
+                    <div class="flow-step">🤖 LLM 기반 분석</div>
+                    <div class="flow-step">🔍 키워드·주제·감정 추출</div>
+                    <div class="flow-step">📊 인사이트 시각화</div>
+                </div>
+                <div class="features">
+                    <div class="feature-item">
+                        <div class="feature-icon">⚡</div>
+                        <div class="feature-text">실시간 AI 분석</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📅</div>
+                        <div class="feature-text">1/7/30일 선택 분석</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">👁️</div>
+                        <div class="feature-text">팀 참여도 시각화</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">3 / 6</div>
+        </div>
+
+        <!-- 슬라이드 4: 기대 효과 -->
+        <div class="slide slide-4">
+            <h2>도입 시 기대 효과</h2>
+            <div class="benefits-container">
+                <div class="benefit-section">
+                    <h3>정량적 효과</h3>
+                    <div class="metric">
+                        <span class="metric-label">온보딩 시간</span>
+                        <span class="metric-value">50% ↓</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">정보 검색 시간</span>
+                        <span class="metric-value">70% ↓</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">야근 시간</span>
+                        <span class="metric-value">20% ↓</span>
+                    </div>
+                </div>
+                <div class="benefit-section">
+                    <h3>정성적 효과</h3>
+                    <div class="quality-item">✓ 투명한 팀 문화 조성</div>
+                    <div class="quality-item">✓ 균형잡힌 의견 참여</div>
+                    <div class="quality-item">✓ 데이터 기반 의사결정</div>
+                    <div class="quality-item">✓ 지속적 프로세스 개선</div>
+                </div>
+            </div>
+            <div class="slide-number">4 / 6</div>
+        </div>
+
+        <!-- 슬라이드 5: 기대 효과 -->
+        <div class="slide slide-5">
+            <h2>Flow Chat 도입 시 기대 효과</h2>
+            <div class="benefits-wrapper">
+                <div class="benefit-card">
+                    <div class="benefit-header">
+                        <div class="benefit-icon">📚</div>
+                        <h3>지식 축적 및 검색력 강화</h3>
+                    </div>
+                    <div class="benefit-content">
+                        <div class="benefit-item">
+                            <span class="check-mark">✓</span>
+                            <span>모든 대화 내용이 체계적으로 저장·분류되어 조직의 지식 자산으로 활용</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="check-mark">✓</span>
+                            <span>과거 사례, 의사결정 기록, FAQ를 쉽게 검색해 업무 연속성과 전문성 유지</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-header">
+                        <div class="benefit-icon">🔍</div>
+                        <h3>업무 투명성·책임성 확보</h3>
+                    </div>
+                    <div class="benefit-content">
+                        <div class="benefit-item">
+                            <span class="check-mark">✓</span>
+                            <span>중요 결정사항과 업무 지시를 자동 추출하여 놓친 내용 없이 업무 진행</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="check-mark">✓</span>
+                            <span>협업이 필요한 주요 회의나 업무 집중 시간을 효율적으로 조율</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-header">
+                        <div class="benefit-icon">🚀</div>
+                        <h3>협업 문화 발전</h3>
+                    </div>
+                    <div class="benefit-content">
+                        <div class="benefit-item">
+                            <span class="check-mark">✓</span>
+                            <span>데이터 기반 분석으로 구성원별 커뮤니케이션 스타일 및 팀워크 진단</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="check-mark">✓</span>
+                            <span>커뮤니케이션 병목 지점을 파악해 조직 문화 개선 인사이트 제공</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">5 / 6</div>
+        </div>
+
+        <!-- 슬라이드 6: 프로젝트 정보 -->
+        <div class="slide slide-6">
+            <h2>프로젝트 정보</h2>
+            <div class="project-info-wrapper">
+                <div class="project-top-section">
+                    <div class="github-section">
+                        <div class="info-box">
+                            <div class="info-icon">📂</div>
+                            <a href="https://github.com/ni-heemang/chat_flow" target="_blank" class="github-url">
+                                github.com/ni-heemang/chat_flow
+                            </a>
+                            <div class="info-desc">
+                                전체 소스코드 공개<br>
+                                오픈소스 프로젝트
+                            </div>
+                        </div>
+                    </div>
+                    <div class="divider-line-vertical"></div>
+                    <div class="claude-section">
+                        <div class="info-box">
+                            <div class="info-icon">🤖</div>
+                            <div class="claude-title">Claude Code</div>
+                            <div class="claude-percentage">100%</div>
+                            <div class="info-desc">
+                                모든 코드를 AI가 작성<br>
+                                차세대 개발 패러다임
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="demo-section">
+                    <div class="demo-title">
+                        <span>🚀</span>
+                        <span>Live Demo</span>
+                    </div>
+                    <div class="demo-content">
+                        <div class="demo-link">
+                            <a href="http://ec2-13-125-240-100.ap-northeast-2.compute.amazonaws.com/" target="_blank" class="demo-url">
+                                ec2-13-125-240-100.ap-northeast-2.compute.amazonaws.com
+                            </a>
+                            <div class="demo-note">AWS EC2에서 실제 서비스 운영 중</div>
+                        </div>
+                        <div class="divider-line-vertical-small"></div>
+                        <div class="test-account">
+                            <div class="test-title">🔑 테스트 계정</div>
+                            <div class="account-info">
+                                ID: <span>test1</span><br>
+                                PW: <span>testtest</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">6 / 6</div>
+        </div>
+    </div>
+</body>
+</html>
