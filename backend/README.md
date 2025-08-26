@@ -106,30 +106,31 @@ docker run -d \
 ```
 
 ### AWS ECR 배포
-1. ECR 로그인
+1. ECR 이미지 빌드 및 푸시 스크립트 실행
 ```bash
-aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin your-account-id.dkr.ecr.ap-northeast-2.amazonaws.com
+chmod +X deploy-ecr.sh
+./deploy-ecr.sh ap-northeast-2 {account_id} latest
 ```
 
-2. 이미지 태깅 및 푸시
+2. EC2에서 환경변수 설정
 ```bash
-docker tag flowchat-backend:latest your-account-id.dkr.ecr.ap-northeast-2.amazonaws.com/flowchat-backend:latest
-docker push your-account-id.dkr.ecr.ap-northeast-2.amazonaws.com/flowchat-backend:latest
+export SPRING_DATASOURCE_PASSWORD=
+export LLM_API_KEY=
 ```
 
 3. EC2에서 실행
 ```bash
-docker pull your-account-id.dkr.ecr.ap-northeast-2.amazonaws.com/flowchat-backend:latest
+docker pull {your-account-id}.dkr.ecr.ap-northeast-2.amazonaws.com/flowchat-backend:latest
 docker run -d \
   --name flowchat-backend \
   --restart unless-stopped \
   -p 8080:8080 \
-  -e "SPRING_DATASOURCE_URL=jdbc:mysql://db-host:3306/flowchat?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true" \
+  -e "SPRING_DATASOURCE_URL=jdbc:mysql://{DB_HOST}:3306/flowchat?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true" \
   -e "SPRING_DATASOURCE_USERNAME=flowchat" \
   -e "SPRING_DATASOURCE_PASSWORD=your_secure_password" \
   -e "LLM_API_KEY=your_openai_api_key" \
   -e "SPRING_PROFILES_ACTIVE=prod" \
-  your-account-id.dkr.ecr.ap-northeast-2.amazonaws.com/flowchat-backend:latest
+  {your-account-id}.dkr.ecr.ap-northeast-2.amazonaws.com/flowchat-backend:latest
 ```
 
 ## 프로젝트 구조
